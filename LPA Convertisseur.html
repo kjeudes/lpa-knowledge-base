@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LPA · Convertisseur HTML</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3350;
+    --accent: #ffd700;
+    --accent2: #4fc3f7;
+    --text: #e8eaf0;
+    --text-muted: #7c859a;
+    --success: #4caf50;
+    --error: #ef5350;
+    --warning: #ff9800;
+    --radius: 10px;
+    --font: 'Segoe UI', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ── */
+  .app-header {
+    background: linear-gradient(135deg, #0f1117 0%, #1a1d27 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .app-logo {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: var(--accent);
+    font-family: Georgia, serif;
+    letter-spacing: .06em;
+  }
+  .app-subtitle {
+    color: var(--text-muted);
+    font-size: .82rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .app-badge {
+    margin-left: auto;
+    background: rgba(255,215,0,.1);
+    border: 1px solid rgba(255,215,0,.3);
+    color: var(--accent);
+    font-size: .72rem;
+    padding: 3px 12px;
+    border-radius: 20px;
+    letter-spacing: .06em;
+  }
+
+  /* ── Layout ── */
+  .app-body {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    grid-template-rows: 1fr;
+    gap: 0;
+    height: calc(100vh - 65px);
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .sidebar-section {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-section:last-child { border-bottom: none; }
+  .section-label {
+    font-size: .7rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* API Key */
+  .input-group { display: flex; flex-direction: column; gap: 6px; }
+  .input-group label { font-size: .82rem; color: var(--text-muted); }
+  .api-input-wrap { display: flex; gap: 6px; }
+  .api-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-size: .85rem;
+    font-family: monospace;
+    transition: border-color .2s;
+  }
+  .api-input:focus { outline: none; border-color: var(--accent2); }
+  .btn-sm {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 0 12px;
+    cursor: pointer;
+    font-size: .8rem;
+    transition: background .15s;
+    white-space: nowrap;
+  }
+  .btn-sm:hover { background: var(--border); }
+  .api-status {
+    font-size: .75rem;
+    padding: 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .api-status.ok { color: var(--success); }
+  .api-status.err { color: var(--error); }
+  .api-status.idle { color: var(--text-muted); }
+
+  /* Model selector */
+  .select-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-size: .85rem;
+    cursor: pointer;
+  }
+  .select-input:focus { outline: none; border-color: var(--accent2); }
+
+  /* Options */
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: .84rem;
+    color: var(--text);
+    cursor: pointer;
+    padding: 4px 0;
+    user-select: none;
+  }
+  .checkbox-row input[type=checkbox] { accent-color: var(--accent2); width: 15px; height: 15px; }
+
+  /* Matière badges */
+  .matiere-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .matiere-chip {
+    font-size: .72rem;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: bold;
+    color: #fff;
+    letter-spacing: .04em;
+  }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .stat-val { font-size: 1.3rem; font-weight: bold; color: var(--accent); }
+  .stat-lbl { font-size: .7rem; color: var(--text-muted); margin-top: 2px; }
+
+  /* History */
+  .history-list { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
+  .history-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: border-color .15s;
+    font-size: .8rem;
+  }
+  .history-item:hover { border-color: var(--accent2); }
+  .history-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .history-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .history-dl {
+    background: none;
+    border: none;
+    color: var(--accent2);
+    cursor: pointer;
+    font-size: .75rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background .15s;
+  }
+  .history-dl:hover { background: rgba(79,195,247,.1); }
+  .empty-state { color: var(--text-muted); font-size: .8rem; text-align: center; padding: 12px; }
+
+  /* ── Main panel ── */
+  .main-panel {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    overflow: hidden;
+  }
+
+  .panel-tabs {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    padding: 14px 18px;
+    cursor: pointer;
+    font-size: .85rem;
+    border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+  }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+  .tab-btn:hover:not(.active) { color: var(--text); }
+
+  .panel-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    overflow: hidden;
+  }
+  .panel-content.single { grid-template-columns: 1fr; }
+
+  .editor-pane, .preview-pane {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .editor-pane { border-right: 1px solid var(--border); }
+
+  .pane-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: .78rem;
+    color: var(--text-muted);
+  }
+  .pane-header strong { color: var(--text); }
+  .pane-header-right { margin-left: auto; display: flex; gap: 6px; }
+
+  .editor-area {
+    flex: 1;
+    resize: none;
+    background: #0d0f18;
+    border: none;
+    color: #c9d1e0;
+    font-family: 'Courier New', monospace;
+    font-size: .82rem;
+    line-height: 1.7;
+    padding: 16px 20px;
+    overflow-y: auto;
+    tab-size: 2;
+  }
+  .editor-area:focus { outline: none; }
+  .editor-area::placeholder { color: #3a3f55; }
+
+  .preview-frame {
+    flex: 1;
+    border: none;
+    background: #fff;
+  }
+
+  .html-output {
+    flex: 1;
+    background: #0d0f18;
+    color: #c9d1e0;
+    font-family: 'Courier New', monospace;
+    font-size: .78rem;
+    line-height: 1.6;
+    padding: 16px 20px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* ── Action bar ── */
+  .action-bar {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .btn-convert {
+    background: linear-gradient(135deg, #ffd700 0%, #ffb300 100%);
+    color: #0f1117;
+    border: none;
+    border-radius: 8px;
+    padding: 11px 28px;
+    font-size: .9rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: opacity .15s, transform .1s;
+    letter-spacing: .02em;
+  }
+  .btn-convert:hover:not(:disabled) { opacity: .92; transform: translateY(-1px); }
+  .btn-convert:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+  .btn-outline {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 20px;
+    color: var(--text);
+    font-size: .85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: border-color .15s, background .15s;
+  }
+  .btn-outline:hover:not(:disabled) { border-color: var(--accent2); background: rgba(79,195,247,.06); }
+  .btn-outline:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* Progress / status */
+  .status-area { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .status-pill {
+    font-size: .78rem;
+    padding: 4px 12px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .status-pill.idle { background: var(--surface2); color: var(--text-muted); }
+  .status-pill.running { background: rgba(79,195,247,.15); color: var(--accent2); border: 1px solid rgba(79,195,247,.3); }
+  .status-pill.done { background: rgba(76,175,80,.12); color: var(--success); border: 1px solid rgba(76,175,80,.3); }
+  .status-pill.error { background: rgba(239,83,80,.12); color: var(--error); border: 1px solid rgba(239,83,80,.3); }
+
+  .spinner {
+    width: 12px; height: 12px;
+    border: 2px solid rgba(79,195,247,.3);
+    border-top-color: var(--accent2);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Progress bar */
+  .progress-wrap {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--surface2);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity .3s;
+  }
+  .progress-wrap.visible { opacity: 1; }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width .4s ease;
+    width: 0%;
+  }
+
+  /* Token counter */
+  .token-info { font-size: .75rem; color: var(--text-muted); }
+  .token-info span { color: var(--accent2); font-weight: bold; }
+
+  /* Notification */
+  .notif {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: .84rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: transform .3s, opacity .3s;
+    z-index: 1000;
+    max-width: 360px;
+  }
+  .notif.show { transform: translateY(0); opacity: 1; }
+  .notif.success { border-color: rgba(76,175,80,.4); color: var(--success); }
+  .notif.error { border-color: rgba(239,83,80,.4); color: var(--error); }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .app-body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .sidebar { max-height: 300px; border-right: none; border-bottom: 1px solid var(--border); }
+    .panel-content { grid-template-columns: 1fr; }
+    .editor-pane { border-right: none; border-bottom: 1px solid var(--border); max-height: 40vh; }
+  }
+
+  /* Drag & drop */
+  .drop-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(79,195,247,.08);
+    border: 3px dashed var(--accent2);
+    border-radius: 12px;
+    z-index: 998;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: var(--accent2);
+    pointer-events: none;
+  }
+  .drop-overlay.active { display: flex; }
+
+  /* Batch mode */
+  .batch-list { display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto; }
+  .batch-file {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: .78rem;
+    padding: 5px 8px;
+    border-radius: 5px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+  }
+  .batch-file .bf-status { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); flex-shrink: 0; }
+  .batch-file .bf-status.done { background: var(--success); }
+  .batch-file .bf-status.running { background: var(--accent2); animation: pulse 1s infinite; }
+  .batch-file .bf-status.error { background: var(--error); }
+  .batch-file .bf-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+</style>
+</head>
+<body>
+
+<div class="progress-wrap" id="progressWrap">
+  <div class="progress-bar" id="progressBar"></div>
+</div>
+
+<div class="drop-overlay" id="dropOverlay">📄 Déposer le fichier .md ici</div>
+
+<div class="notif" id="notif"></div>
+
+<!-- Header -->
+<header class="app-header">
+  <div>
+    <div class="app-logo">LPA</div>
+    <div class="app-subtitle">Lycée Personnel Autonome · Convertisseur HTML</div>
+  </div>
+  <div class="app-badge">DPFC / MENET-FP CI · 2025-2026</div>
+</header>
+
+<!-- Body -->
+<div class="app-body">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+
+    <!-- API Key -->
+    <div class="sidebar-section">
+      <div class="section-label">🔑 Clé API Anthropic</div>
+      <div class="input-group">
+        <div class="api-input-wrap">
+          <input type="password" class="api-input" id="apiKey" placeholder="sk-ant-api03-..." autocomplete="off">
+          <button class="btn-sm" onclick="toggleApiKey()">👁</button>
+          <button class="btn-sm" onclick="saveApiKey()">✓</button>
+        </div>
+        <div class="api-status idle" id="apiStatus">
+          <span>●</span> Clé non configurée
+        </div>
+      </div>
+    </div>
+
+    <!-- Modèle -->
+    <div class="sidebar-section">
+      <div class="section-label">🤖 Modèle</div>
+      <select class="select-input" id="modelSelect">
+        <option value="claude-sonnet-4-6">claude-sonnet-4-6 (recommandé)</option>
+        <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 (rapide / économique)</option>
+        <option value="claude-opus-4-6">claude-opus-4-6 (puissant)</option>
+      </select>
+      <div style="font-size:.72rem;color:var(--text-muted);margin-top:6px;">
+        Sonnet : meilleur équilibre qualité/coût · ~$0,03/leçon
+      </div>
+    </div>
+
+    <!-- Options -->
+    <div class="sidebar-section">
+      <div class="section-label">⚙️ Options</div>
+      <label class="checkbox-row">
+        <input type="checkbox" id="optMathJax" checked>
+        Inclure MathJax (formules LaTeX)
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="optPreview" checked>
+        Prévisualisation automatique
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="optAutoDownload">
+        Téléchargement auto après conversion
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="optBatchMode">
+        Mode batch (multi-fichiers)
+      </label>
+    </div>
+
+    <!-- Charte matières -->
+    <div class="sidebar-section">
+      <div class="section-label">🎨 Charte chromatique LPA</div>
+      <div class="matiere-grid" id="matiereGrid"></div>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="sidebar-section">
+      <div class="section-label">📊 Session</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-val" id="statConvert">0</div>
+          <div class="stat-lbl">Conversions</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statTokens">0</div>
+          <div class="stat-lbl">Tokens utilisés</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statCost">$0.00</div>
+          <div class="stat-lbl">Coût estimé</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statErrors">0</div>
+          <div class="stat-lbl">Erreurs</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Historique -->
+    <div class="sidebar-section">
+      <div class="section-label">📁 Historique</div>
+      <div class="history-list" id="historyList">
+        <div class="empty-state">Aucune conversion pour l'instant</div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- Main -->
+  <div class="main-panel">
+
+    <!-- Tabs -->
+    <div class="panel-tabs">
+      <button class="tab-btn active" onclick="setTab('split')" id="tab-split">⬛ Éditeur + Aperçu</button>
+      <button class="tab-btn" onclick="setTab('editor')" id="tab-editor">✏️ Éditeur seul</button>
+      <button class="tab-btn" onclick="setTab('preview')" id="tab-preview">👁 Aperçu seul</button>
+      <button class="tab-btn" onclick="setTab('html')" id="tab-html">&lt;/&gt; HTML généré</button>
+      <button class="tab-btn" onclick="setTab('batch')" id="tab-batch">📦 Batch</button>
+    </div>
+
+    <!-- Content -->
+    <div class="panel-content" id="panelContent">
+
+      <!-- Éditeur -->
+      <div class="editor-pane" id="editorPane">
+        <div class="pane-header">
+          <strong>Source LPA balisé</strong>
+          <div class="pane-header-right">
+            <button class="btn-sm" onclick="loadExample()">Exemple</button>
+            <button class="btn-sm" onclick="clearEditor()">Effacer</button>
+            <label class="btn-sm" style="cursor:pointer;">
+              📂 Fichier
+              <input type="file" id="fileInput" accept=".md,.txt" style="display:none" onchange="loadFile(this)">
+            </label>
+          </div>
+        </div>
+        <textarea class="editor-area" id="sourceEditor"
+          placeholder="Coller ici le contenu balisé LPA généré par Claude...
+
+[HEADER]
+MATIERE: Mathématiques
+LECON: 7
+NIVEAU: Seconde
+...
+[/HEADER]
+
+[SECTION:1]
+MISE EN ROUTE
+[/SECTION]
+
+[BOX:capsule]
+TITRE: Capsule de reprise
+...
+[/BOX]
+
+💡 Tu peux aussi glisser-déposer un fichier .md ici."></textarea>
+      </div>
+
+      <!-- Prévisualisation -->
+      <div class="preview-pane" id="previewPane">
+        <div class="pane-header">
+          <strong>Aperçu HTML</strong>
+          <div class="pane-header-right">
+            <button class="btn-sm" onclick="refreshPreview()">↻ Actualiser</button>
+            <button class="btn-sm" onclick="openInTab()">↗ Ouvrir</button>
+          </div>
+        </div>
+        <iframe class="preview-frame" id="previewFrame"></iframe>
+      </div>
+
+    </div>
+
+    <!-- Batch view (hidden by default) -->
+    <div style="display:none;flex:1;padding:24px;overflow-y:auto;background:var(--bg);" id="batchView">
+      <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <label class="btn-outline" style="cursor:pointer;">
+          📂 Sélectionner les fichiers
+          <input type="file" id="batchInput" accept=".md,.txt" multiple style="display:none" onchange="loadBatchFiles(this)">
+        </label>
+        <button class="btn-outline" onclick="convertBatch()" id="batchConvertBtn" disabled>
+          ⚡ Convertir tout
+        </button>
+        <button class="btn-outline" onclick="downloadBatchZip()" id="batchZipBtn" disabled>
+          📦 Télécharger ZIP
+        </button>
+        <span class="token-info" id="batchProgress"></span>
+      </div>
+      <div class="batch-list" id="batchList">
+        <div class="empty-state">Sélectionner des fichiers .md pour commencer</div>
+      </div>
+    </div>
+
+    <!-- Action bar -->
+    <div class="action-bar">
+      <button class="btn-convert" id="convertBtn" onclick="convert()" disabled>
+        ⚡ Convertir en HTML
+      </button>
+      <button class="btn-outline" id="downloadBtn" onclick="downloadHTML()" disabled>
+        ⬇ Télécharger .html
+      </button>
+      <button class="btn-outline" onclick="copyHTML()" id="copyBtn" disabled>
+        📋 Copier HTML
+      </button>
+      <div class="status-area">
+        <div class="token-info" id="tokenInfo" style="display:none">
+          Tokens : <span id="tokenCount">0</span> · Coût : <span id="costEst">$0.00</span>
+        </div>
+        <div class="status-pill idle" id="statusPill">
+          <span>○</span> Prêt
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CHARTE CHROMATIQUE LPA
+// ═══════════════════════════════════════════════════════════
+const MATIERE_CHARTE = {
+  'Français':            { p: '#8B1E3F', s: '#D4AF37', label: 'FR',  emoji: '📖' },
+  'Anglais':             { p: '#003366', s: '#C8102E', label: 'ANG', emoji: '🇬🇧' },
+  'Espagnol':            { p: '#C62828', s: '#FBC02D', label: 'ESP', emoji: '🇪🇸' },
+  'Histoire-Géographie': { p: '#6D4C41', s: '#C49A6C', label: 'HG',  emoji: '🗺️' },
+  'Philosophie':         { p: '#5E35B1', s: '#B39DDB', label: 'PHI', emoji: '💭' },
+  'Mathématiques':       { p: '#1565C0', s: '#4FC3F7', label: 'MAT', emoji: '📐' },
+  'Physique-Chimie':     { p: '#00838F', s: '#00BCD4', label: 'PC',  emoji: '⚗️' },
+  'SVT':                 { p: '#2E7D32', s: '#81C784', label: 'SVT', emoji: '🌿' },
+  'Informatique':        { p: '#263238', s: '#1976D2', label: 'TIC', emoji: '💻' },
+  'Éducation civique':   { p: '#1E3A8A', s: '#94A3B8', label: 'EC',  emoji: '🏛️' },
+};
+
+// Correspondances pour la détection
+const MATIERE_ALIASES = {
+  'mathématiques': 'Mathématiques',
+  'maths': 'Mathématiques',
+  'math': 'Mathématiques',
+  'français': 'Français',
+  'francais': 'Français',
+  'anglais': 'Anglais',
+  'english': 'Anglais',
+  'espagnol': 'Espagnol',
+  'español': 'Espagnol',
+  'histoire-géographie': 'Histoire-Géographie',
+  'histoire géographie': 'Histoire-Géographie',
+  'histoire': 'Histoire-Géographie',
+  'hg': 'Histoire-Géographie',
+  'physique-chimie': 'Physique-Chimie',
+  'physique chimie': 'Physique-Chimie',
+  'pc': 'Physique-Chimie',
+  'svt': 'SVT',
+  'sciences de la vie': 'SVT',
+  'philosophie': 'Philosophie',
+  'philo': 'Philosophie',
+  'informatique': 'Informatique',
+  'tic': 'Informatique',
+  'éducation civique': 'Éducation civique',
+  'ecjs': 'Éducation civique',
+};
+
+function detectMatiere(text) {
+  const header = text.match(/MATIERE\s*:\s*(.+)/i);
+  if (!header) return null;
+  const raw = header[1].trim().toLowerCase();
+  for (const [alias, canonical] of Object.entries(MATIERE_ALIASES)) {
+    if (raw.includes(alias)) return canonical;
+  }
+  // Tentative directe
+  for (const key of Object.keys(MATIERE_CHARTE)) {
+    if (raw.includes(key.toLowerCase())) return key;
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CSS LPA (embarqué — sera injecté dans chaque HTML généré)
+// ═══════════════════════════════════════════════════════════
+async function fetchLpaCSS() {
+  // Le CSS est embarqué directement dans le prompt système
+  // Il sera demandé à Claude de l'inclure dans le <style> du HTML
+  return null; // Claude le génère lui-même depuis le prompt
+}
+
+// ═══════════════════════════════════════════════════════════
+// PROMPT SYSTÈME CONVERTISSEUR
+// ═══════════════════════════════════════════════════════════
+function buildSystemPrompt(matiere) {
+  const charte = matiere && MATIERE_CHARTE[matiere] ? MATIERE_CHARTE[matiere] : null;
+  const charteCSS = charte ? `
+/* ── Charte matière : ${matiere} ── */
+:root {
+  --matiere-primaire: ${charte.p};
+  --matiere-secondaire: ${charte.s};
+}
+.lpa-header {
+  background: linear-gradient(135deg, ${charte.p} 0%, color-mix(in srgb, ${charte.p} 70%, #000) 100%) !important;
+}
+.lpa-section-banner { background: ${charte.p} !important; }
+.lpa-phase-titre .phase-num { background: ${charte.p} !important; }
+.lpa-badge { background: rgba(255,255,255,.18) !important; border-color: rgba(255,255,255,.3) !important; }
+.mm-centre { background: ${charte.p} !important; }
+` : '';
+
+  return `PROMPT_COPILOT_LPA_v3.0 — Convertisseur officiel LPA → HTML
+
+MISSION : Tu convertis du texte LPA balisé en HTML complet et autonome.
+Tu effectues UNIQUEMENT une transformation structurelle.
+INTERDIT : reformuler · résumer · corriger · enrichir · traduire · simplifier · réorganiser
+AUTORISÉ : ajouter balises HTML · classes CSS · fermer correctement les balises
+Le contenu doit être reproduit MOT POUR MOT.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FORMAT DE SORTIE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Produire UN SEUL fichier HTML complet, autonome, avec le CSS embarqué dans <style>.
+Le fichier doit fonctionner SANS fichier externe.
+Commencer directement par <!DOCTYPE html> — pas d'explication, pas de markdown, pas de backticks.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CSS À EMBARQUER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Inclure ce CSS COMPLET dans <style> :
+
+:root {
+  --vert:#1a7a4a;--vert-clair:#e8f5ee;--vert-moyen:#c3e8d2;
+  --bleu:#1565c0;--bleu-clair:#e3eeff;--bleu-moyen:#b3d0ff;
+  --rouge:#c0392b;--rouge-clair:#fdecea;--rouge-moyen:#f5b7b1;
+  --orange:#d97c0a;--orange-clair:#fff3e0;--orange-moyen:#ffe0a0;
+  --violet:#6a1b9a;--violet-clair:#f3e5f5;--violet-moyen:#ce93d8;
+  --gris-fonce:#1e2a38;--gris-moyen:#4a5568;--gris-clair:#f4f6f9;--gris-bord:#d1d9e0;
+  --or:#b8860b;--or-clair:#fffae0;--blanc:#ffffff;
+  --radius:10px;--radius-sm:6px;
+  --shadow:0 2px 8px rgba(0,0,0,.10);--shadow-sm:0 1px 4px rgba(0,0,0,.07);
+  --font-titre:'Georgia','Times New Roman',serif;
+  --font-corps:'Segoe UI','Helvetica Neue',Arial,sans-serif;
+  --font-mono:'Courier New',Courier,monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-corps);font-size:15px;line-height:1.75;color:var(--gris-fonce);background:var(--gris-clair);}
+.lpa-header{background:linear-gradient(135deg,var(--gris-fonce) 0%,#2d4a6e 100%);color:#fff;padding:36px 48px 28px;position:relative;overflow:hidden;}
+.lpa-header::before{content:'';position:absolute;top:-40px;right:-40px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.05);}
+.lpa-logo{font-family:var(--font-titre);font-size:2.6rem;font-weight:bold;letter-spacing:.08em;color:#ffd700;line-height:1;}
+.lpa-soustitre{font-size:.85rem;color:rgba(255,255,255,.7);letter-spacing:.12em;text-transform:uppercase;margin-top:2px;}
+.lpa-meta{margin-top:18px;display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;}
+.lpa-badge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:3px 14px;font-size:.78rem;color:#fff;letter-spacing:.04em;}
+.lpa-titre-lecon{font-family:var(--font-titre);font-size:1.65rem;font-weight:bold;margin-top:14px;color:#ffd700;line-height:1.3;}
+.lpa-sous-titre-lecon{font-size:1rem;color:rgba(255,255,255,.82);font-style:italic;margin-top:4px;}
+.lpa-prof{margin-top:14px;font-size:.82rem;color:rgba(255,255,255,.6);border-top:1px solid rgba(255,255,255,.15);padding-top:10px;}
+.lpa-sommaire{background:#fff;border:2px solid var(--gris-bord);border-radius:var(--radius);padding:20px 28px;margin:24px 0;box-shadow:var(--shadow-sm);}
+.lpa-sommaire h2{font-family:var(--font-titre);font-size:1rem;color:var(--gris-moyen);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;border-bottom:2px solid var(--gris-bord);padding-bottom:8px;}
+.lpa-sommaire ul{list-style:none;padding:0;}
+.lpa-sommaire>ul>li{margin-bottom:6px;}
+.lpa-sommaire>ul>li>strong{color:var(--gris-fonce);font-size:.9rem;display:block;margin-bottom:2px;}
+.lpa-sommaire ul ul{padding-left:18px;margin-top:2px;}
+.lpa-sommaire ul ul li{color:var(--gris-moyen);font-size:.83rem;line-height:1.6;position:relative;padding-left:10px;}
+.lpa-sommaire ul ul li::before{content:'·';position:absolute;left:0;color:var(--vert);}
+.lpa-section-banner{background:var(--gris-fonce);color:#fff;font-family:var(--font-titre);font-size:1rem;font-weight:bold;letter-spacing:.08em;text-transform:uppercase;padding:10px 24px;border-radius:var(--radius-sm);margin:32px 0 18px;display:flex;align-items:center;gap:10px;}
+.lpa-section-banner .s-num{background:rgba(255,255,255,.15);border-radius:4px;padding:1px 8px;font-size:.75rem;letter-spacing:.15em;}
+.lpa-phase-titre{font-family:var(--font-titre);font-size:1.15rem;font-weight:bold;color:var(--gris-fonce);margin:28px 0 12px;padding-bottom:6px;border-bottom:3px solid var(--vert);display:flex;align-items:center;gap:8px;}
+.lpa-phase-titre .phase-num{background:var(--vert);color:#fff;font-size:.72rem;font-weight:bold;padding:2px 9px;border-radius:12px;letter-spacing:.06em;text-transform:uppercase;}
+.lpa-box{border-radius:var(--radius);padding:18px 22px;margin:14px 0;box-shadow:var(--shadow-sm);position:relative;}
+.lpa-box-titre{font-weight:bold;font-size:.9rem;margin-bottom:8px;display:flex;align-items:center;gap:7px;}
+.box-capsule{background:#fff8e1;border-left:5px solid #f9a825;}
+.box-capsule .lpa-box-titre{color:#7c5800;}
+.box-ancrage{background:var(--vert-clair);border-left:5px solid var(--vert);}
+.box-ancrage .lpa-box-titre{color:var(--vert);}
+.box-harkness{background:var(--violet-clair);border-left:5px solid var(--violet);}
+.box-harkness .lpa-box-titre{color:var(--violet);}
+.box-harkness .hk-question{font-style:italic;color:var(--gris-moyen);font-size:.9rem;margin:4px 0 8px;}
+.box-harkness .hk-guide{font-size:.83rem;color:#555;background:rgba(106,27,154,.07);border-radius:var(--radius-sm);padding:6px 12px;margin-bottom:8px;}
+.box-harkness .hk-corrige{font-weight:bold;color:var(--violet);font-size:.88rem;background:var(--violet-moyen);border-radius:var(--radius-sm);padding:6px 12px;}
+.box-retenir{background:var(--bleu-clair);border:2px solid var(--bleu-moyen);border-left:6px solid var(--bleu);}
+.box-retenir .lpa-box-titre{color:var(--bleu);}
+.box-attention{background:var(--rouge-clair);border-left:5px solid var(--rouge);}
+.box-attention .lpa-box-titre{color:var(--rouge);}
+.box-def{background:var(--or-clair);border:1px solid #e0c050;border-left:6px solid var(--or);}
+.box-def .lpa-box-titre{color:var(--or);}
+.box-def .def-terme{font-family:var(--font-titre);font-size:1rem;font-weight:bold;color:var(--gris-fonce);}
+.box-def .def-fr{font-size:.88rem;color:var(--gris-moyen);margin-top:4px;}
+.box-trace{background:#fff;border:2px dashed var(--vert);}
+.box-trace .lpa-box-titre{color:var(--vert);}
+.box-analogie{background:#e8f4fd;border-left:5px solid #2196F3;font-style:italic;}
+.box-analogie .lpa-box-titre{color:#1565c0;}
+.box-exo-guide{background:#fff;border:2px solid var(--vert-moyen);border-top:5px solid var(--vert);}
+.box-exo-guide .lpa-box-titre{color:var(--vert);font-size:1rem;}
+.box-exo-guide .exo-notion{font-size:.82rem;color:var(--gris-moyen);font-style:italic;margin-bottom:10px;}
+.box-exo{background:#fff;border:1px solid var(--gris-bord);border-top:4px solid var(--bleu);}
+.box-exo .lpa-box-titre{color:var(--bleu);font-size:.95rem;}
+.box-exo .exo-notion{font-size:.82rem;color:var(--gris-moyen);font-style:italic;margin-bottom:8px;}
+.box-dm{background:linear-gradient(135deg,#fff9f0 0%,#fff3e0 100%);border:2px solid var(--orange-moyen);border-top:5px solid var(--orange);}
+.box-dm .lpa-box-titre{color:var(--orange);font-size:1rem;}
+.box-corrige{background:var(--vert-clair);border:1px solid var(--vert-moyen);border-left:6px solid var(--vert);}
+.box-corrige .lpa-box-titre{color:var(--vert);}
+.box-erreur{background:var(--rouge-clair);border-left:4px solid var(--rouge);font-size:.86rem;margin-top:8px;}
+.box-erreur .lpa-box-titre{color:var(--rouge);font-size:.84rem;}
+.box-schema{background:#f0f4f8;border:1.5px solid var(--gris-bord);border-top:4px solid var(--gris-moyen);font-family:var(--font-mono);font-size:.83rem;}
+.box-schema .lpa-box-titre{font-family:var(--font-corps);color:var(--gris-moyen);}
+.box-methode{background:#f8f5ff;border-left:5px solid var(--violet);}
+.box-methode .lpa-box-titre{color:var(--violet);}
+.box-synthese{background:#fff;border:2px solid #e0c050;border-top:4px solid var(--or);}
+.box-synthese .lpa-box-titre{color:var(--or);}
+.box-decouverte{background:#f0f7ff;border-left:5px solid #1976D2;}
+.box-decouverte .lpa-box-titre{color:#1565c0;}
+.lpa-table{width:100%;border-collapse:collapse;font-size:.88rem;margin:12px 0;box-shadow:var(--shadow-sm);border-radius:var(--radius);overflow:hidden;}
+.lpa-table thead tr{background:var(--gris-fonce);color:#fff;}
+.lpa-table thead th{padding:10px 16px;text-align:left;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;}
+.lpa-table tbody tr:nth-child(odd){background:#fff;}
+.lpa-table tbody tr:nth-child(even){background:var(--gris-clair);}
+.lpa-table tbody td{padding:10px 16px;border-bottom:1px solid var(--gris-bord);vertical-align:top;}
+.lpa-table tbody td:first-child{font-weight:bold;color:var(--bleu);font-family:var(--font-mono);font-size:.85rem;}
+.lpa-liste{padding-left:0;list-style:none;margin:8px 0;}
+.lpa-liste li{padding:5px 0 5px 24px;position:relative;font-size:.9rem;border-bottom:1px dotted var(--gris-bord);line-height:1.6;}
+.lpa-liste li:last-child{border-bottom:none;}
+.lpa-liste li::before{content:'→';position:absolute;left:4px;color:var(--vert);font-weight:bold;}
+.lpa-etapes{padding-left:0;list-style:none;counter-reset:etape;margin:8px 0;}
+.lpa-etapes li{counter-increment:etape;padding:7px 0 7px 36px;position:relative;font-size:.9rem;border-bottom:1px dotted var(--gris-bord);}
+.lpa-etapes li:last-child{border-bottom:none;}
+.lpa-etapes li::before{content:'É' counter(etape);position:absolute;left:0;background:var(--vert);color:#fff;font-size:.7rem;font-weight:bold;padding:1px 5px;border-radius:4px;top:8px;}
+.lpa-guide{background:var(--bleu-clair);border-radius:var(--radius-sm);padding:8px 14px;font-size:.82rem;color:var(--bleu);margin-top:10px;border-left:3px solid var(--bleu);}
+.lpa-guide::before{content:'💡 Guide : ';font-weight:bold;}
+.lpa-verifie{background:var(--vert-clair);border-radius:var(--radius-sm);padding:7px 14px;font-size:.82rem;color:var(--vert);margin-top:8px;}
+.lpa-verifie::before{content:'✔ Ce que mobilise cet exercice : ';font-weight:bold;}
+.lpa-citation{text-align:center;padding:36px 48px;background:var(--gris-fonce);color:#fff;margin-top:40px;}
+.lpa-citation blockquote{font-family:var(--font-titre);font-size:1.25rem;font-style:italic;color:#ffd700;margin:0 auto 12px;max-width:640px;line-height:1.5;}
+.lpa-citation .cit-trad{font-size:.88rem;color:rgba(255,255,255,.7);margin-bottom:16px;}
+.lpa-citation .cit-sig{font-size:.78rem;color:rgba(255,255,255,.45);letter-spacing:.06em;text-transform:uppercase;}
+.lpa-mindmap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:16px 8px;}
+.mm-centre{background:var(--gris-fonce);color:#fff;font-weight:bold;font-size:.95rem;padding:10px 22px;border-radius:24px;text-align:center;letter-spacing:.04em;}
+.mm-branches{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}
+.mm-branche{padding:8px 16px;border-radius:18px;font-size:.82rem;font-weight:bold;color:#fff;text-align:center;min-width:160px;}
+.mm-branche.bleu{background:var(--bleu);}
+.mm-branche.rouge{background:var(--rouge);}
+.mm-branche.vert{background:var(--vert);}
+.mm-branche.orange{background:var(--orange);}
+.lpa-arbre{display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 8px;font-size:.85rem;}
+.arbre-noeud{background:var(--bleu-clair);border:2px solid var(--bleu-moyen);border-radius:var(--radius-sm);padding:8px 20px;font-weight:bold;color:var(--bleu);text-align:center;max-width:340px;}
+.arbre-noeud.racine{background:var(--gris-fonce);color:#fff;border-color:var(--gris-fonce);font-size:.95rem;}
+.arbre-fleche{color:var(--gris-moyen);font-size:1.2rem;line-height:1;}
+.arbre-branche-container{display:flex;gap:32px;justify-content:center;flex-wrap:wrap;}
+.arbre-branche{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.arbre-branche .arbre-noeud{border-color:var(--vert-moyen);background:var(--vert-clair);color:var(--vert);min-width:180px;}
+.arbre-branche .arbre-resultat{background:var(--vert);color:#fff;font-weight:bold;font-size:.82rem;padding:6px 14px;border-radius:12px;text-align:center;}
+.flash-grid{display:grid;gap:10px;margin:10px 0;}
+.flash-item{background:#fff;border-radius:var(--radius-sm);border:1px solid var(--gris-bord);padding:10px 14px;font-size:.88rem;}
+.flash-item .flash-q{font-weight:bold;color:var(--gris-fonce);}
+.flash-item .flash-r{color:var(--vert);font-weight:bold;margin-top:3px;font-size:.85rem;}
+.lpa-page{max-width:900px;margin:0 auto;padding:24px 20px 48px;}
+p{margin-bottom:8px;font-size:.9rem;}
+strong{color:var(--gris-fonce);}
+em{color:var(--gris-moyen);}
+.tag-en{background:#1565c0;color:#fff;font-size:.72rem;font-weight:bold;padding:1px 6px;border-radius:3px;font-family:var(--font-mono);letter-spacing:.04em;vertical-align:middle;}
+.tag-fr{background:#e3eeff;color:#1565c0;font-size:.72rem;font-weight:bold;padding:1px 6px;border-radius:3px;vertical-align:middle;}
+.dialogue-ligne{padding:3px 0;font-size:.88rem;}
+.dialogue-a{color:var(--bleu);font-weight:bold;}
+.dialogue-b{color:var(--vert);font-weight:bold;}
+.trad-grise{color:var(--gris-moyen);font-size:.82rem;font-style:italic;}
+.checklist{list-style:none;padding:0;margin:8px 0;}
+.checklist li{padding:4px 0 4px 26px;position:relative;font-size:.88rem;color:var(--gris-moyen);}
+.checklist li::before{content:'☐';position:absolute;left:2px;color:var(--orange);}
+@media(max-width:640px){.lpa-header{padding:24px 20px 20px;}.lpa-logo{font-size:2rem;}.lpa-titre-lecon{font-size:1.3rem;}.lpa-page{padding:12px 12px 36px;}}
+@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}body{background:#fff;font-size:11px;}@page{margin:1.5cm 1.2cm;size:A4;}.lpa-box{break-inside:avoid;}.lpa-header{background:linear-gradient(135deg,#1e2a38 0%,#2d4a6e 100%)!important;}}
+${charteCSS}
+
+Puis convertir le texte LPA balisé selon les règles suivantes :
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RÈGLES DE CONVERSION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[HEADER] → <!DOCTYPE html><html lang="fr"><head>...<style>CSS ICI</style>MathJax si LaTeX</head><body><header class="lpa-header">...</header><main class="lpa-page">
+
+[SECTION:N]texte[/SECTION] → <div class="lpa-section-banner"><span class="s-num">SECTION N</span> texte</div>
+
+[PHASE:N]texte[/PHASE] → <div class="lpa-phase-titre"><span class="phase-num">Phase N</span> texte</div>
+
+[BOX:capsule] → <div class="lpa-box box-capsule"><div class="lpa-box-titre">📌 {TITRE}</div>...</div>
+[BOX:ancrage] → <div class="lpa-box box-ancrage"><div class="lpa-box-titre">🌍 Ancrage ivoirien</div>...</div>
+[BOX:harkness] → <div class="lpa-box box-harkness"> avec hk-question · hk-guide · hk-corrige
+[BOX:retenir] → <div class="lpa-box box-retenir"><div class="lpa-box-titre">📘 À retenir — {TITRE}</div>...</div>
+[BOX:attention] → <div class="lpa-box box-attention"><div class="lpa-box-titre">⚠ Attention — {TITRE}</div>...</div>
+[BOX:def] → <div class="lpa-box box-def"> avec def-terme · tag-en · DEFINITION · def-fr
+[BOX:trace] → <div class="lpa-box box-trace"><div class="lpa-box-titre">✎ TRACE ÉCRITE</div>...</div>
+[BOX:analogie] → <div class="lpa-box box-analogie"><div class="lpa-box-titre">~ ANALOGIE CI</div>...</div>
+[BOX:decouverte] → <div class="lpa-box box-decouverte"><div class="lpa-box-titre">📖 {TITRE}</div>...</div>
+[BOX:exo-guide] → <div class="lpa-box box-exo-guide"> avec exo-notion · box-methode · lpa-etapes · lpa-verifie
+[BOX:exo] → <div class="lpa-box box-exo"> avec exo-notion · lpa-guide
+[BOX:dm] → <div class="lpa-box box-dm"> avec checklist · lpa-etapes
+[BOX:corrige] → <div class="lpa-box box-corrige"> — 1 exercice = 1 box-corrige, jamais fusionner
+[BOX:erreur] → <div class="lpa-box box-erreur"> imbriquée dans corrige/synthese
+[BOX:methode] → <div class="lpa-box box-methode"><div class="lpa-box-titre">🔧 Démarche guidée</div><ol class="lpa-etapes">...</ol></div>
+[BOX:synthese] → <div class="lpa-box box-synthese">...</div>
+[BOX:schema:arbre] → <div class="lpa-box box-schema"><div class="lpa-arbre">...</div></div>
+[BOX:schema:mindmap] → <div class="lpa-box box-schema"><div class="lpa-mindmap">...</div></div>
+
+[LISTE] → <ul class="lpa-liste"> avec <li> pour chaque - item
+[ETAPES] → <ol class="lpa-etapes"> avec <li> pour chaque étape
+[CHECKLIST] → <ul class="checklist"> avec <li>
+[TABLEAU] → <table class="lpa-table"> — première ligne = thead, reste = tbody, séparateur |
+[FLASH] → <div class="flash-grid"> avec flash-item · flash-q · flash-r pour chaque Q·→R
+[DIALOGUE] → lignes avec dialogue-a / dialogue-b / trad-grise
+
+[CITATION] → ferme </main> puis <footer class="lpa-citation"><blockquote>...</blockquote>...</footer></body></html>
+
+RÈGLES CRITIQUES :
+- Titres : jamais dupliquer le préfixe (pas "Corrigé — Corrigé — Exercice 1")
+- LIEN DPFC : ne l'afficher qu'une fois, dans le box-ancrage final
+- Note : → <p><strong>Note :</strong> ...</p>
+- Texte libre hors balise → <p>texte</p>
+- Ne jamais perdre une ligne
+- Texte étranger → <em>...</em>
+- MathJax : toujours inclure si formules mathématiques présentes`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ÉTAT DE L'APP
+// ═══════════════════════════════════════════════════════════
+let state = {
+  apiKey: '',
+  model: 'claude-sonnet-4-6',
+  generatedHTML: '',
+  generatedFileName: '',
+  converting: false,
+  stats: { conversions: 0, tokens: 0, cost: 0, errors: 0 },
+  history: [],
+  batchFiles: [],
+  batchResults: [],
+  currentTab: 'split',
+};
+
+// Prix en $ par token (input/output) pour Sonnet
+const TOKEN_PRICE = { input: 3/1e6, output: 15/1e6 };
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // Restaurer clé API
+  const saved = localStorage.getItem('lpa_api_key');
+  if (saved) {
+    state.apiKey = saved;
+    document.getElementById('apiKey').value = saved;
+    updateApiStatus('ok');
+  }
+
+  // Restaurer modèle
+  const savedModel = localStorage.getItem('lpa_model');
+  if (savedModel) {
+    document.getElementById('modelSelect').value = savedModel;
+    state.model = savedModel;
+  }
+
+  // Afficher la charte matières
+  renderMatiereGrid();
+
+  // Écouter changements
+  document.getElementById('apiKey').addEventListener('input', () => {
+    state.apiKey = document.getElementById('apiKey').value.trim();
+    updateConvertBtn();
+  });
+  document.getElementById('modelSelect').addEventListener('change', (e) => {
+    state.model = e.target.value;
+    localStorage.setItem('lpa_model', state.model);
+  });
+  document.getElementById('sourceEditor').addEventListener('input', updateConvertBtn);
+
+  // Drag & drop
+  setupDragDrop();
+
+  updateConvertBtn();
+});
+
+function renderMatiereGrid() {
+  const grid = document.getElementById('matiereGrid');
+  grid.innerHTML = '';
+  for (const [name, charte] of Object.entries(MATIERE_CHARTE)) {
+    const chip = document.createElement('div');
+    chip.className = 'matiere-chip';
+    chip.style.background = charte.p;
+    chip.title = name;
+    chip.textContent = charte.label;
+    grid.appendChild(chip);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// API KEY
+// ═══════════════════════════════════════════════════════════
+function toggleApiKey() {
+  const input = document.getElementById('apiKey');
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+function saveApiKey() {
+  const key = document.getElementById('apiKey').value.trim();
+  if (!key) return;
+  state.apiKey = key;
+  localStorage.setItem('lpa_api_key', key);
+  updateApiStatus('ok');
+  showNotif('✓ Clé API sauvegardée', 'success');
+  updateConvertBtn();
+}
+
+function updateApiStatus(status) {
+  const el = document.getElementById('apiStatus');
+  if (status === 'ok') {
+    el.className = 'api-status ok';
+    el.innerHTML = '<span>●</span> Clé configurée';
+  } else {
+    el.className = 'api-status idle';
+    el.innerHTML = '<span>●</span> Clé non configurée';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════════
+function setTab(tab) {
+  state.currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+
+  const content = document.getElementById('panelContent');
+  const batchView = document.getElementById('batchView');
+  const editorPane = document.getElementById('editorPane');
+  const previewPane = document.getElementById('previewPane');
+
+  content.style.display = 'grid';
+  batchView.style.display = 'none';
+
+  if (tab === 'split') {
+    content.style.gridTemplateColumns = '1fr 1fr';
+    editorPane.style.display = 'flex';
+    previewPane.style.display = 'flex';
+    previewPane.innerHTML = previewPane.innerHTML; // reset
+    document.getElementById('previewFrame') || (previewPane.innerHTML = '<iframe class="preview-frame" id="previewFrame"></iframe>');
+  } else if (tab === 'editor') {
+    content.style.gridTemplateColumns = '1fr';
+    editorPane.style.display = 'flex';
+    previewPane.style.display = 'none';
+  } else if (tab === 'preview') {
+    content.style.gridTemplateColumns = '1fr';
+    editorPane.style.display = 'none';
+    previewPane.style.display = 'flex';
+    // S'assurer que l'iframe est là
+    if (!document.getElementById('previewFrame')) {
+      previewPane.innerHTML += '<iframe class="preview-frame" id="previewFrame"></iframe>';
+    }
+  } else if (tab === 'html') {
+    content.style.gridTemplateColumns = '1fr';
+    editorPane.style.display = 'none';
+    previewPane.style.display = 'flex';
+    previewPane.innerHTML = `
+      <div class="pane-header">
+        <strong>HTML généré</strong>
+        <div class="pane-header-right">
+          <button class="btn-sm" onclick="copyHTML()">📋 Copier</button>
+        </div>
+      </div>
+      <div class="html-output">${escapeHtml(state.generatedHTML || '(aucune conversion encore)')}</div>
+    `;
+  } else if (tab === 'batch') {
+    content.style.display = 'none';
+    batchView.style.display = 'block';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// CONVERSION
+// ═══════════════════════════════════════════════════════════
+async function convert() {
+  if (state.converting) return;
+  const source = document.getElementById('sourceEditor').value.trim();
+  if (!source) return showNotif('⚠ Aucun contenu à convertir', 'error');
+  if (!state.apiKey) return showNotif('⚠ Clé API manquante', 'error');
+
+  state.converting = true;
+  setStatus('running', 'Conversion en cours...');
+  setProgress(10);
+  document.getElementById('convertBtn').disabled = true;
+
+  try {
+    const matiere = detectMatiere(source);
+    const systemPrompt = buildSystemPrompt(matiere);
+    setProgress(25);
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': state.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: state.model,
+        max_tokens: 8192,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: source }],
+      }),
+    });
+
+    setProgress(70);
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || `Erreur API ${response.status}`);
+    }
+
+    const data = await response.json();
+    setProgress(90);
+
+    let html = data.content[0].text.trim();
+
+    // Nettoyer les backticks markdown si présents
+    html = html.replace(/^```html\n?/i, '').replace(/\n?```$/i, '').trim();
+
+    // Vérifier que c'est bien du HTML
+    if (!html.includes('<!DOCTYPE') && !html.includes('<html')) {
+      throw new Error('La réponse ne semble pas être du HTML valide');
+    }
+
+    // Injecter MathJax si demandé et si LaTeX détecté
+    if (document.getElementById('optMathJax').checked && hasLatex(source)) {
+      html = injectMathJax(html);
+    }
+
+    state.generatedHTML = html;
+
+    // Nom de fichier
+    const lecon = source.match(/LECON\s*:\s*(.+)/i);
+    const matN = source.match(/MATIERE\s*:\s*(.+)/i);
+    const titre = source.match(/TITRE\s*:\s*(.+)/i);
+    const niveauMatch = source.match(/NIVEAU\s*:\s*(.+)/i);
+    const lNum = lecon ? lecon[1].trim().replace(/\s+/g, '') : 'L';
+    const mName = matN ? matN[1].trim().replace(/\s+/g, '_') : 'cours';
+    const tName = titre ? titre[1].trim().replace(/\s+/g, '_').substring(0,30) : '';
+    state.generatedFileName = `LPA_${mName}_L${lNum}_${tName}.html`;
+
+    // Stats tokens
+    const usage = data.usage || {};
+    const inputT = usage.input_tokens || 0;
+    const outputT = usage.output_tokens || 0;
+    const cost = inputT * TOKEN_PRICE.input + outputT * TOKEN_PRICE.output;
+
+    state.stats.conversions++;
+    state.stats.tokens += inputT + outputT;
+    state.stats.cost += cost;
+    updateStats();
+
+    document.getElementById('tokenInfo').style.display = 'flex';
+    document.getElementById('tokenCount').textContent = (inputT + outputT).toLocaleString();
+    document.getElementById('costEst').textContent = '$' + cost.toFixed(4);
+
+    // Prévisualisation
+    if (document.getElementById('optPreview').checked) {
+      updatePreview(html);
+    }
+
+    // Historique
+    addToHistory(state.generatedFileName, matiere, html);
+
+    // Téléchargement auto
+    if (document.getElementById('optAutoDownload').checked) {
+      downloadHTML();
+    }
+
+    document.getElementById('downloadBtn').disabled = false;
+    document.getElementById('copyBtn').disabled = false;
+    setProgress(100);
+    setStatus('done', `✓ Converti · ${(outputT).toLocaleString()} tokens`);
+    showNotif('✓ Conversion réussie !', 'success');
+
+    // Si on est sur l'onglet HTML, l'actualiser
+    if (state.currentTab === 'html') setTab('html');
+
+    setTimeout(() => setProgress(0), 800);
+
+  } catch (err) {
+    state.stats.errors++;
+    updateStats();
+    setStatus('error', '✗ ' + (err.message || 'Erreur inconnue'));
+    showNotif('✗ ' + err.message, 'error');
+    setProgress(0);
+    console.error(err);
+  }
+
+  state.converting = false;
+  document.getElementById('convertBtn').disabled = false;
+  updateConvertBtn();
+}
+
+function hasLatex(text) {
+  return /\$[^$]+\$|\\\(|\\\[|\\frac|\\sqrt|\\int|\\sum|\\prod|\\alpha|\\beta|\\Delta|\\forall|\\exists/.test(text);
+}
+
+function injectMathJax(html) {
+  const mathjaxScript = `
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'], ['\\\\(','\\\\)']], displayMath: [['$$','$$'], ['\\\\[','\\\\]']] },
+  svg: { fontCache: 'global' }
+};
+<\/script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"><\/script>`;
+
+  if (html.includes('mathjax') || html.includes('MathJax')) return html;
+  return html.replace('</head>', mathjaxScript + '\n</head>');
+}
+
+function updatePreview(html) {
+  // S'assurer qu'on est sur split ou preview
+  if (state.currentTab === 'html') return;
+  if (state.currentTab !== 'split' && state.currentTab !== 'preview') {
+    setTab('split');
+  }
+  const frame = document.getElementById('previewFrame');
+  if (!frame) return;
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  frame.src = url;
+}
+
+function refreshPreview() {
+  if (state.generatedHTML) updatePreview(state.generatedHTML);
+}
+
+function openInTab() {
+  if (!state.generatedHTML) return;
+  const blob = new Blob([state.generatedHTML], { type: 'text/html' });
+  window.open(URL.createObjectURL(blob), '_blank');
+}
+
+// ═══════════════════════════════════════════════════════════
+// DOWNLOAD / COPY
+// ═══════════════════════════════════════════════════════════
+function downloadHTML(html, name) {
+  const content = html || state.generatedHTML;
+  const filename = name || state.generatedFileName || 'cours_lpa.html';
+  if (!content) return;
+  const blob = new Blob([content], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  showNotif('⬇ Téléchargé : ' + filename, 'success');
+}
+
+function copyHTML() {
+  if (!state.generatedHTML) return;
+  navigator.clipboard.writeText(state.generatedHTML).then(() => {
+    showNotif('📋 HTML copié dans le presse-papiers', 'success');
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// BATCH MODE
+// ═══════════════════════════════════════════════════════════
+function loadBatchFiles(input) {
+  state.batchFiles = Array.from(input.files);
+  state.batchResults = [];
+  const list = document.getElementById('batchList');
+  list.innerHTML = '';
+  if (state.batchFiles.length === 0) {
+    list.innerHTML = '<div class="empty-state">Sélectionner des fichiers .md pour commencer</div>';
+    return;
+  }
+  state.batchFiles.forEach((file, i) => {
+    const item = document.createElement('div');
+    item.className = 'batch-file';
+    item.id = 'bfile-' + i;
+    item.innerHTML = `
+      <div class="bf-status" id="bstat-${i}"></div>
+      <div class="bf-name">${file.name}</div>
+      <span style="color:var(--text-muted);font-size:.75rem;" id="bsize-${i}">${(file.size/1024).toFixed(1)} Ko</span>
+    `;
+    list.appendChild(item);
+  });
+  document.getElementById('batchConvertBtn').disabled = false;
+  document.getElementById('batchProgress').textContent = `${state.batchFiles.length} fichier(s) sélectionné(s)`;
+}
+
+async function convertBatch() {
+  if (!state.apiKey) return showNotif('⚠ Clé API manquante', 'error');
+  if (state.batchFiles.length === 0) return;
+
+  document.getElementById('batchConvertBtn').disabled = true;
+  state.batchResults = [];
+
+  for (let i = 0; i < state.batchFiles.length; i++) {
+    const file = state.batchFiles[i];
+    const stat = document.getElementById('bstat-' + i);
+    stat.className = 'bf-status running';
+    document.getElementById('batchProgress').textContent = `Conversion ${i+1}/${state.batchFiles.length} : ${file.name}`;
+
+    try {
+      const text = await file.text();
+      const matiere = detectMatiere(text);
+      const systemPrompt = buildSystemPrompt(matiere);
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': state.apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: state.model,
+          max_tokens: 8192,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: text }],
+        }),
+      });
+
+      if (!response.ok) throw new Error(`API ${response.status}`);
+      const data = await response.json();
+      let html = data.content[0].text.trim()
+        .replace(/^```html\n?/i, '').replace(/\n?```$/i, '').trim();
+
+      if (document.getElementById('optMathJax').checked && hasLatex(text)) {
+        html = injectMathJax(html);
+      }
+
+      const outName = file.name.replace(/\.(md|txt)$/i, '.html');
+      state.batchResults.push({ name: outName, html, matiere });
+      stat.className = 'bf-status done';
+
+      const usage = data.usage || {};
+      state.stats.conversions++;
+      state.stats.tokens += (usage.input_tokens || 0) + (usage.output_tokens || 0);
+      state.stats.cost += ((usage.input_tokens||0) * TOKEN_PRICE.input + (usage.output_tokens||0) * TOKEN_PRICE.output);
+      updateStats();
+
+    } catch (err) {
+      stat.className = 'bf-status error';
+      state.stats.errors++;
+      updateStats();
+    }
+
+    // Petite pause pour ne pas saturer l'API
+    if (i < state.batchFiles.length - 1) await sleep(800);
+  }
+
+  document.getElementById('batchProgress').textContent =
+    `✓ ${state.batchResults.length}/${state.batchFiles.length} conversions réussies`;
+  document.getElementById('batchZipBtn').disabled = state.batchResults.length === 0;
+  document.getElementById('batchConvertBtn').disabled = false;
+  showNotif(`✓ Batch terminé : ${state.batchResults.length} fichiers convertis`, 'success');
+}
+
+async function downloadBatchZip() {
+  if (state.batchResults.length === 0) return;
+  // Téléchargement un par un (pas de lib zip ici)
+  for (const { name, html } of state.batchResults) {
+    downloadHTML(html, name);
+    await sleep(300);
+  }
+  showNotif(`⬇ ${state.batchResults.length} fichiers téléchargés`, 'success');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ═══════════════════════════════════════════════════════════
+// FICHIER & ÉDITEUR
+// ═══════════════════════════════════════════════════════════
+function loadFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('sourceEditor').value = e.target.result;
+    updateConvertBtn();
+    showNotif('📄 Fichier chargé : ' + file.name, 'success');
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function clearEditor() {
+  document.getElementById('sourceEditor').value = '';
+  updateConvertBtn();
+}
+
+function loadExample() {
+  document.getElementById('sourceEditor').value = `[HEADER]
+MATIERE: Mathématiques
+LECON: 7
+NIVEAU: Seconde
+COEFFICIENT: 3
+COMPETENCE: Maîtriser les fonctions inverse et racine carrée
+TITRE: Fonctions inverse et racine carrée
+PROFESSEUR: Germain YAPI
+ANNEE: 2025-2026
+[/HEADER]
+
+SOMMAIRE DE LA LEÇON
+
+[LISTE]
+- Section 1 : Mise en route — capsule, ancrage, Harkness
+- Section 2 : Cours — fonctions inverse et racine carrée
+- Section 3 : Exercices d'entraînement
+- Section 4 : Corrigés complets
+[/LISTE]
+
+[SECTION:1]
+MISE EN ROUTE — RÉVISION · ANCRAGE · DISCUSSION
+[/SECTION]
+
+[BOX:capsule]
+TITRE: Capsule de reprise — Ce que vous savez déjà (Leçon 6)
+
+[LISTE]
+- Point 1 : La fonction affine f(x) = ax+b est croissante si a > 0
+- Point 2 : La fonction carré f(x) = x² est paire · minimum 0 en x=0
+- Point 3 : Le domaine s'obtient en excluant les valeurs interdites
+[/LISTE]
+
+[FLASH]
+Q1 · Quel est le domaine de f(x) = 1/x ? → ℝ\\{0}
+Q2 · Peut-on calculer √(-9) dans ℝ ? → Non, racine définie pour réels ≥ 0
+Q3 · Signe de 1/x pour x > 0 ? → positif
+[/FLASH]
+[/BOX]
+
+[BOX:ancrage]
+TITRE: Ancrage ivoirien — Inverse et racine à Abidjan
+
+Kouassi Dimitri partage 60 000 F entre x amis. Chacun reçoit P(x) = 60000/x francs.
+Pour x=5 : 12 000 F · Pour x=10 : 6 000 F.
+
+LIEN DPFC : Ces fonctions modélisent des phénomènes réels en physique et économie.
+[/BOX]
+
+[BOX:retenir]
+TITRE: Fonction inverse
+
+La fonction inverse est définie par f(x) = 1/x sur ℝ\\{0}.
+Sa courbe est une hyperbole · décroissante sur ]-∞;0[ et sur ]0;+∞[.
+[/BOX]
+
+[CITATION]
+TEXTE: "Ce que l'on conçoit bien s'énonce clairement."
+AUTEUR: Bernard Dadié
+PROFESSEUR: Germain YAPI
+MATIERE: Mathématiques
+NIVEAU: Seconde
+[/CITATION]`;
+  updateConvertBtn();
+}
+
+// ═══════════════════════════════════════════════════════════
+// HISTORIQUE
+// ═══════════════════════════════════════════════════════════
+function addToHistory(name, matiere, html) {
+  const charte = matiere && MATIERE_CHARTE[matiere];
+  const color = charte ? charte.p : '#4a5568';
+  const entry = { name, matiere, color, html, date: new Date() };
+  state.history.unshift(entry);
+  if (state.history.length > 20) state.history.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (state.history.length === 0) {
+    list.innerHTML = '<div class="empty-state">Aucune conversion pour l\'instant</div>';
+    return;
+  }
+  list.innerHTML = state.history.map((e, i) => `
+    <div class="history-item" onclick="loadFromHistory(${i})">
+      <div class="history-dot" style="background:${e.color}"></div>
+      <div class="history-name" title="${e.name}">${e.name}</div>
+      <button class="history-dl" onclick="event.stopPropagation();downloadHTML(state.history[${i}].html,'${e.name}')">⬇</button>
+    </div>
+  `).join('');
+}
+
+function loadFromHistory(i) {
+  const entry = state.history[i];
+  if (!entry) return;
+  state.generatedHTML = entry.html;
+  state.generatedFileName = entry.name;
+  document.getElementById('downloadBtn').disabled = false;
+  document.getElementById('copyBtn').disabled = false;
+  updatePreview(entry.html);
+  showNotif('📄 ' + entry.name + ' chargé', 'success');
+}
+
+// ═══════════════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════════════
+function updateConvertBtn() {
+  const hasKey = !!state.apiKey;
+  const hasContent = document.getElementById('sourceEditor').value.trim().length > 10;
+  document.getElementById('convertBtn').disabled = !hasKey || !hasContent || state.converting;
+}
+
+function setStatus(type, text) {
+  const pill = document.getElementById('statusPill');
+  pill.className = 'status-pill ' + type;
+  if (type === 'running') {
+    pill.innerHTML = '<div class="spinner"></div> ' + text;
+  } else if (type === 'done') {
+    pill.innerHTML = '<span style="color:var(--success)">✓</span> ' + text;
+  } else if (type === 'error') {
+    pill.innerHTML = '<span style="color:var(--error)">✗</span> ' + text;
+  } else {
+    pill.innerHTML = '<span>○</span> ' + text;
+  }
+}
+
+function setProgress(pct) {
+  const wrap = document.getElementById('progressWrap');
+  const bar = document.getElementById('progressBar');
+  if (pct > 0) {
+    wrap.classList.add('visible');
+    bar.style.width = pct + '%';
+  } else {
+    setTimeout(() => {
+      wrap.classList.remove('visible');
+      bar.style.width = '0%';
+    }, 500);
+  }
+}
+
+function updateStats() {
+  document.getElementById('statConvert').textContent = state.stats.conversions;
+  document.getElementById('statTokens').textContent =
+    state.stats.tokens > 999 ? (state.stats.tokens/1000).toFixed(1)+'k' : state.stats.tokens;
+  document.getElementById('statCost').textContent = '$' + state.stats.cost.toFixed(3);
+  document.getElementById('statErrors').textContent = state.stats.errors;
+}
+
+let notifTimeout;
+function showNotif(msg, type) {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.className = 'notif show ' + (type || '');
+  clearTimeout(notifTimeout);
+  notifTimeout = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ═══════════════════════════════════════════════════════════
+// DRAG & DROP
+// ═══════════════════════════════════════════════════════════
+function setupDragDrop() {
+  const overlay = document.getElementById('dropOverlay');
+  document.addEventListener('dragover', e => {
+    e.preventDefault();
+    overlay.classList.add('active');
+  });
+  document.addEventListener('dragleave', e => {
+    if (!e.relatedTarget) overlay.classList.remove('active');
+  });
+  document.addEventListener('drop', e => {
+    e.preventDefault();
+    overlay.classList.remove('active');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      if (file.name.match(/\.(md|txt)$/i)) {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          document.getElementById('sourceEditor').value = ev.target.result;
+          updateConvertBtn();
+          showNotif('📄 ' + file.name + ' chargé', 'success');
+        };
+        reader.readAsText(file);
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>
